@@ -15,6 +15,8 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
+import time
+
 
 class GestureRecognition:
     def __init__(self, use_static_image_mode=False, min_detection_confidence=0.7, min_tracking_confidence=0.7,
@@ -37,7 +39,7 @@ class GestureRecognition:
         mp_hands = mp.solutions.hands
         hands = mp_hands.Hands(
             static_image_mode=self.use_static_image_mode,
-            max_num_hands=1,
+            max_num_hands=2,# PAT changed to 2 so that we can pick between left and right hand
             min_detection_confidence=self.min_detection_confidence,
             min_tracking_confidence=self.min_tracking_confidence,
         )
@@ -52,6 +54,7 @@ class GestureRecognition:
             keypoint_classifier_labels = [
                 row[0] for row in keypoint_classifier_labels
             ]
+            print(keypoint_classifier_labels) # PAT
         with open(
                 'model/point_history_classifier/point_history_classifier_label.csv',
                 encoding='utf-8-sig') as f:
@@ -80,6 +83,22 @@ class GestureRecognition:
         image.flags.writeable = False
         results = self.hands.process(image)
         image.flags.writeable = True
+
+
+
+        ignoreHand = "Left" # PAT
+        #ignoreHand = "Right" # PAT
+        
+        # Fix to not allow specific hand
+        j = 0
+        if results.multi_handedness is not None:
+            for hand in results.multi_handedness:
+                if ignoreHand in str(hand):
+                    results.multi_handedness.pop(j)
+                    results.multi_hand_landmarks.pop(j)
+                j += 1
+    
+
 
         #  ####################################################################
         if results.multi_hand_landmarks is not None:
@@ -486,6 +505,9 @@ class GestureBuffer:
 
     def get_gesture(self):
         counter = Counter(self._buffer).most_common()
+        
+        # print(f"\n\n counter: {counter} \n\n self._buffer: {self._buffer}  \n\n")
+        
         if counter[0][1] >= (self.buffer_len - 1):
             self._buffer.clear()
             return counter[0][0]
