@@ -10,6 +10,7 @@ class SwarmGestureController:
     def __init__(self, swarm: TelloSwarm):
         self.swarm = swarm
         self._is_landing = False
+        
 
         # Controller to wether or not we want to allow flips. 
         # Needs to be reset after ever flip by pressing 'z' key
@@ -23,17 +24,18 @@ class SwarmGestureController:
 
     def gesture_control(self, gesture_buffer):
         gesture_id = gesture_buffer.get_gesture()
-        print("GESTURE", gesture_id)
+        # print("GESTURE", gesture_id) # PAT (uncomment to see gesture num in cmd)
 
         if not self._is_landing:
-
+            
+            
+            
             if keyboard.is_pressed('z'): # Reset flip permissions
                 self.AllowF = True
 
             if gesture_id == 8 and self.AllowF: # Flip
-                self.swarm.sync()
-                self.swarm.parallel(lambda i, tello: tello.send_control_command("flip f") )
-                self.swarm.sync()
+                for tello in self.swarm:
+                    tello.send_command_without_return("flip f")
                 print("Flips! Weeeee")
                 self.AllowF = False
 
@@ -59,9 +61,8 @@ class SwarmGestureController:
                 self.up_down_velocity = 0
                 self.left_right_velocity = 0
                 self.yaw_velocity = 0
-                self.swarm.sync()
-                self.swarm.land()
-                # Hold land gesture until all drones have landed
+                for tello in self.swarm:
+                   tello.send_command_without_return("land")
 
             elif gesture_id == 6: # LEFT
                 self.left_right_velocity = 20
@@ -75,6 +76,3 @@ class SwarmGestureController:
                     self.left_right_velocity = self.yaw_velocity = 0
 
             self.swarm.parallel(lambda i, tello: tello.send_rc_control(self.left_right_velocity, self.forw_back_velocity, self.up_down_velocity, self.yaw_velocity) )
-        else: # Added because it may take a bit for the land message to reach swarm
-            self.swarm.parallel(lambda i, tello: tello.land() )
-            # Hold land gesture until all drones have landed
