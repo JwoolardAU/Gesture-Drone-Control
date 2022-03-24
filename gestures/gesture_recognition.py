@@ -54,7 +54,7 @@ class GestureRecognition:
             keypoint_classifier_labels = [
                 row[0] for row in keypoint_classifier_labels
             ]
-            print(keypoint_classifier_labels) # PAT
+            # print(keypoint_classifier_labels) # PAT - uncomment to see current gesture being recognized
         with open(
                 'model/point_history_classifier/point_history_classifier_label.csv',
                 encoding='utf-8-sig') as f:
